@@ -1,12 +1,15 @@
 import argparse
+import asyncio
 from datetime import date
+import os
 from pathlib import Path
 import sys
 
 from mailroom.dates import first_monday_of_next_month
 from mailroom.issues import check_issue
-from mailroom.models import Issue
-from mailroom.subscribers import count_subscribers, import_signups
+from mailroom.models import Issue, SendPlan
+from mailroom.sender import SendError, build_send_plan, send_plan
+from mailroom.subscribers import count_subscribers, import_signups, load_subscribers
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -64,6 +67,46 @@ def main(argv: list[str] | None = None) -> int:
         "--strict",
         action="store_true",
         help="Stop on the first invalid row",
+    )
+
+    send_parser = subparsers.add_parser(
+        "send", help="Plan or send a newsletter issue to the practice server"
+    )
+    send_parser.add_argument(
+        "issue_path",
+        type=Path,
+        nargs="?",
+        default=None,
+        help="Path to issue markdown",
+    )
+    send_parser.add_argument(
+        "--file",
+        type=Path,
+        default=Path("data/subscribers.csv"),
+        help="Path to subscribers CSV",
+    )
+    send_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Write outbox/plan.json without sending",
+    )
+    send_parser.add_argument(
+        "--plan-out",
+        type=Path,
+        default=Path("outbox/plan.json"),
+        help="Output path for --dry-run plan JSON",
+    )
+    send_parser.add_argument(
+        "--from-plan",
+        type=Path,
+        default=None,
+        help="Send from a previously generated plan JSON",
+    )
+    send_parser.add_argument(
+        "--at-once",
+        type=int,
+        default=5,
+        help="Maximum concurrent sends",
     )
 
     args = parser.parse_args(argv)
@@ -143,6 +186,59 @@ def main(argv: list[str] | None = None) -> int:
         for prob in result.problems:
             print(f"  Row {prob.row_number} ({prob.field}): {prob.message}")
         return 1 if result.problems else 0
+
+    if args.command == "send":
+        try:
+            if args.from_plan is not None:
+                plan = SendPlan.from_file(args.from_plan)
+            else:
+                if args.issue_path is None:
+                    print("Provide an issue_path or --from-plan.", file=sys.stderr)
+                    return 2
+                issue = Issue.from_file(args.issue_path)
+                subscribers = load_subscribers(args.file)
+                plan = build_send_plan(
+                    issue=issue,
+                    subscribers=subscribers,
+                    sender=os.environ.get(
+                        "SENDER_EMAIL_ADDRESS", "onboarding@resend.dev"
+                    ),
+                    company_address=os.environ.get(
+                        "COMPANY_ADDRESS", "Kettlebird Tea, 12 Tea Lane"
+                    ),
+                    unsubscribe_base_url=os.environ.get(
+                        "UNSUBSCRIBE_URL", "https://kettlebird.example/unsubscribe"
+                    ),
+                )
+        except FileNotFoundError as exc:
+            print(f"File not found: {exc.filename}.", file=sys.stderr)
+            return 2
+        except (ValueError, SendError) as exc:
+            print(f"Cannot prepare send plan: {exc}", file=sys.stderr)
+            return 1
+
+        if args.dry_run:
+            plan.save(args.plan_out)
+            print(f"Dry run: wrote {len(plan.emails)} emails to {args.plan_out}.")
+            return 0
+
+        api_url = os.environ.get("RESEND_API_URL", "http://localhost:4000")
+        api_key = os.environ.get("RESEND_API_KEY", "re_practice")
+        try:
+            receipts = asyncio.run(
+                send_plan(
+                    plan,
+                    api_url=api_url,
+                    api_key=api_key,
+                    at_once=args.at_once,
+                )
+            )
+        except SendError as exc:
+            print(f"Send failed: {exc}", file=sys.stderr)
+            return 1
+
+        print(f"Sent {len(receipts)} emails.")
+        return 0
 
     return 1
 

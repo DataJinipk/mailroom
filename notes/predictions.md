@@ -59,3 +59,11 @@
   - **Error design (Step 13):**
     - Missing file -> 1-sentence error message, no traceback, exit code `2`.
     - Bad rows in `new-signups.csv` -> reports all 6 problems with row numbers and fields, exit code `1`.
+
+## Steps 14–18 — Dry-Run Plan, Localhost Sending, HTTP Errors, Async Concurrency, and Idempotency
+- **Prediction (written before code):**
+  - `mailroom send issues/issue-01.md --dry-run` checks the issue first, renders 24 personalized emails with `{{company_address}}` and `{{unsubscribe_url}}` filled, and writes `outbox/plan.json`.
+  - `--from-plan outbox/plan.json` re-validates the JSON through `SendPlan` before any send.
+  - Non-localhost `RESEND_API_URL` (e.g. `https://api.resend.com`) or non-practice recipient (e.g. `@gmail.com`) is rejected before any HTTP request is made.
+  - HTTP `4xx` (`401`, `404`, `422`) fails immediately with 1 attempt (never retried); HTTP `5xx` retries up to `max_retries` with the exact same `Idempotency-Key` header.
+  - Async sending with `--at-once 5` caps in-flight requests at 5, preserves subscriber order, and sends all 24 emails.

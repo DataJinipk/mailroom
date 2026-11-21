@@ -97,3 +97,74 @@ class ImportResult:
 
     accepted: list[Subscriber]
     problems: list[ImportProblem]
+
+
+@dataclass(frozen=True)
+class PlannedEmail:
+    """Validated outbound email entry in a dry-run send plan."""
+
+    to: str
+    sender: str
+    subject: str
+    text: str
+    idempotency_key: str
+
+    @classmethod
+    def from_dict(cls, data: object) -> "PlannedEmail":
+        if not isinstance(data, dict):
+            raise ValueError("planned email entry must be a JSON object")
+        to = str(data.get("to") or "").strip()
+        sender = str(data.get("sender") or "").strip()
+        subject = str(data.get("subject") or "").strip()
+        text = str(data.get("text") or "").strip()
+        idempotency_key = str(data.get("idempotency_key") or "").strip()
+        if not EMAIL_SHAPE_PATTERN.match(to):
+            raise ValueError(f"invalid planned recipient email: {to!r}")
+        if not EMAIL_SHAPE_PATTERN.match(sender):
+            raise ValueError(f"invalid planned sender email: {sender!r}")
+        if not subject or len(subject) > 50:
+            raise ValueError(f"invalid planned subject: {subject!r}")
+        if not text:
+            raise ValueError("planned email text is required")
+        if not idempotency_key:
+            raise ValueError("planned email idempotency_key is required")
+        return cls(
+            to=to,
+            sender=sender,
+            subject=subject,
+            text=text,
+            idempotency_key=idempotency_key,
+        )
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "to": self.to,
+            "sender": self.sender,
+            "subject": self.subject,
+            "text": self.text,
+            "idempotency_key": self.idempotency_key,
+        }
+
+
+@dataclass(frozen=True)
+class SendPlan:
+    """Validated collection of planned emails."""
+
+    emails: list[PlannedEmail]
+
+    @classmethod
+    def from_file(cls, path: Path) -> "SendPlan":
+        import json
+
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict) or not isinstance(raw.get("emails"), list):
+            raise ValueError("send plan JSON must contain an 'emails' list")
+        emails = [PlannedEmail.from_dict(item) for item in raw["emails"]]
+        return cls(emails=emails)
+
+    def save(self, path: Path) -> None:
+        import json
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {"emails": [email.to_dict() for email in self.emails]}
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

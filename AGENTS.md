@@ -3,7 +3,7 @@
 Mailroom is a Python CLI tool for Kettlebird Tea's *The Steep Club* newsletter, built test-first across Steps 0–26 (Chapters 13–15 of *The AI Agent Factory*).
 
 ## How I learn
-- **Current lesson:** Step 13 (`14.6 Errors as design`).
+- **Current lesson:** Step 18 (`14.9 Reading SDK-shaped code`).
 - Only use Python concepts and tooling introduced up to the current step.
 
 ## Core Rules
@@ -21,3 +21,8 @@ Mailroom is a Python CLI tool for Kettlebird Tea's *The Steep Club* newsletter, 
 - **Validation boundary:** Data from outside goes through the model before any code uses it.
 - **Shape vs meaning:** The model checks the shape. Our own rules check the meaning.
 - **Error design:** Report every problem with its row. No traceback for a user's mistake.
+- **JSON boundary:** JSON read from a file is outside data: it goes through a model too.
+- **Environment & localhost guard:** The key and the address come from the environment. Sending works only against localhost.
+- **HTTP status handling:** Handle each status on purpose. Never retry a 4xx.
+- **Concurrency:** Send with a limit on how many at once.
+- **Retries & client choice:** Retry only what can succeed later, and every send has an idempotency key. Using `httpx.AsyncClient` directly for explicit concurrency, status handling, and idempotency headers.
