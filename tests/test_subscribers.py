@@ -1,24 +1,24 @@
 from datetime import date
 from pathlib import Path
-import tempfile
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mailroom import count_subscribers, first_monday_of_next_month
 
 
-def test_counts_default_subscribers():
+def test_counts_default_subscribers_total_groups_and_consents() -> None:
     result = count_subscribers(Path("data/subscribers.csv"))
-    assert result["total"] == 24, f"expected 24, got {result['total']}"
+    assert result["total"] == 24
     assert result["groups"] == {
         "tea-curious": 8,
         "gift-buyers": 8,
         "daily-drinkers": 8,
-    }, f"unexpected groups: {result['groups']}"
-    assert result["consents"] == {"waitlist form": 24}, (
-        f"unexpected consents: {result['consents']}"
-    )
+    }
+    assert result["consents"] == {"waitlist form": 24}
 
 
-def test_counts_external_six_row_copy():
+def test_counts_external_six_row_copy(tmp_path: Path) -> None:
     sample = "\n".join(
         [
             "first_name,last_name,email,group,joined_on,consent",
@@ -30,47 +30,38 @@ def test_counts_external_six_row_copy():
             "F,Six,f6@example.com,daily-drinkers,2026-09-06,import",
         ]
     )
-    with tempfile.TemporaryDirectory() as tmp:
-        csv_path = Path(tmp) / "six.csv"
-        csv_path.write_text(sample, encoding="utf-8")
-        result = count_subscribers(csv_path)
-        assert result["total"] == 6
-        assert result["groups"] == {
-            "tea-curious": 2,
-            "gift-buyers": 2,
-            "daily-drinkers": 2,
-        }
-        assert result["consents"] == {"waitlist form": 5, "import": 1}
+    csv_path = tmp_path / "six.csv"
+    csv_path.write_text(sample, encoding="utf-8")
+
+    result = count_subscribers(csv_path)
+    assert result["total"] == 6
+    assert result["groups"] == {
+        "tea-curious": 2,
+        "gift-buyers": 2,
+        "daily-drinkers": 2,
+    }
+    assert result["consents"] == {"waitlist form": 5, "import": 1}
 
 
-def test_since_days_30_edge_date():
+def test_since_days_30_includes_cutoff_boundary_and_excludes_day_31() -> None:
     result = count_subscribers(
         Path("data/subscribers.csv"),
         since_days=30,
         run_date=date(2026, 11, 20),
     )
-    assert result["total"] == 7, f"expected 7, got {result['total']}"
+    assert result["total"] == 7
 
 
-def test_since_exact_date():
+def test_since_exact_date_counts_matching_subscribers() -> None:
     result = count_subscribers(
         Path("data/subscribers.csv"),
         since=date(2026, 10, 1),
         run_date=date(2026, 11, 20),
     )
-    assert result["total"] == 12, f"expected 12, got {result['total']}"
+    assert result["total"] == 12
 
 
-def test_first_monday_of_next_month():
+def test_first_monday_of_next_month_across_month_and_year_boundaries() -> None:
     assert first_monday_of_next_month(date(2026, 11, 20)) == date(2026, 12, 7)
     assert first_monday_of_next_month(date(2026, 12, 7)) == date(2027, 1, 4)
     assert first_monday_of_next_month(date(2026, 12, 31)) == date(2027, 1, 4)
-
-
-if __name__ == "__main__":
-    test_counts_default_subscribers()
-    test_counts_external_six_row_copy()
-    test_since_days_30_edge_date()
-    test_since_exact_date()
-    test_first_monday_of_next_month()
-    print("All Step 2 checks passed.")

@@ -25,3 +25,7 @@
 ## Step 3 — Reading an Error (`2026-02-30`)
 - **Prediction (written before running):**
   - Changing Jonas Berg's `joined_on` to `2026-02-30` will raise `ValueError: day is out of range for month` in `date.fromisoformat(joined_raw)` inside `count_subscribers` (`mailroom.py`).
+
+## Step 4 — Real Tests (`pytest`)
+- **Prediction (written before running `pytest`):**
+  - Migrating the 5 behavior checks from `checks.py` into `tests/test_subscribers.py` and removing `checks.py` will run `5` tests and report `5 passed`.
