@@ -1,10 +1,7 @@
 from datetime import date
 from pathlib import Path
-import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from mailroom import count_subscribers, first_monday_of_next_month
+from mailroom import Subscriber, count_subscribers, first_monday_of_next_month
 
 
 def test_counts_default_subscribers_total_groups_and_consents() -> None:
@@ -65,3 +62,15 @@ def test_first_monday_of_next_month_across_month_and_year_boundaries() -> None:
     assert first_monday_of_next_month(date(2026, 11, 20)) == date(2026, 12, 7)
     assert first_monday_of_next_month(date(2026, 12, 7)) == date(2027, 1, 4)
     assert first_monday_of_next_month(date(2026, 12, 31)) == date(2027, 1, 4)
+
+
+def test_subscriber_full_name() -> None:
+    sub = Subscriber(
+        first_name="Ayesha",
+        last_name="Khan",
+        email="ayesha.khan@example.com",
+        group="tea-curious",
+        joined_on=date(2026, 9, 14),
+        consent="waitlist form",
+    )
+    assert sub.full_name == "Ayesha Khan"

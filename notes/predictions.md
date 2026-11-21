@@ -47,3 +47,15 @@
 - **Prediction (written before code):**
   - `"👍🏽 Thanks for joining"` has `len() == 20` (`👍` + `🏽` = 2 code points + 18 chars), which is `<= 50` and passes.
   - A subject with 49 ASCII chars + `"👍🏽"` has `len() == 51` and fails the 50-char limit under Python `len()`.
+
+## Steps 8–10 — Package Split, `pyright`, and `Subscriber`/`Issue` Objects
+- **Prediction (written before code):**
+  - Splitting `mailroom.py` into `src/mailroom/{models,dates,subscribers,issues,commands}.py` preserves all 17 existing tests (`17 passed`), `uv run mailroom --help` works, and `uv run pyright` reports `0 errors, 0 warnings`.
+
+## Steps 11–13 — `new-signups.csv` Validation, Domain Rules, and Error Design
+- **Prediction (written before code):**
+  - **Shape validation only (Step 11):** 4 accepted (`Maria`, `Sara`, `Tom`, `Ines`), 4 rejected (`Omar` missing email, `Lena` missing consent, `Kofi` invalid group `Gift Buyers`, `Hana` invalid date `21/10/2026`).
+  - **Shape + domain rules with `--run-date 2026-11-20` (Step 12):** 2 accepted (`Maria`, `Ines`), 6 rejected (adding `Sara` non-practice `@gmail.com` address and `Tom` future date `2027-01-15` after `2026-11-20`).
+  - **Error design (Step 13):**
+    - Missing file -> 1-sentence error message, no traceback, exit code `2`.
+    - Bad rows in `new-signups.csv` -> reports all 6 problems with row numbers and fields, exit code `1`.
