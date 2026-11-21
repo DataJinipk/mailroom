@@ -90,3 +90,13 @@ def test_subject_emoji_uses_python_len() -> None:
     boundary_51 = ("a" * 49) + "👍🏽"
     assert len(boundary_51) == 51
     assert len(check_subject(Issue.from_text(f"Subject: {boundary_51}\n"))) == 1
+
+
+def test_issue_http_link_is_rejected() -> None:
+    text = Path("issues/issue-01.md").read_text(encoding="utf-8")
+    bad = text.replace(
+        "https://kettlebird.example/steep-club",
+        "http://kettlebird.example/steep-club",
+    )
+    problems = check_issue(Issue.from_text(bad))
+    assert any("https://" in p for p in problems)
