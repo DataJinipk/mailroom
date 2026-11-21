@@ -1,0 +1,5 @@
+# Require owner review for risky sending logic, CI workflows, and project rules
+/src/mailroom/sender.py @DataJinipk
+/.github/workflows/ @DataJinipk
+/AGENTS.md @DataJinipk
+/REVIEW.md @DataJinipk
