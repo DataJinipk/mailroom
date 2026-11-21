@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Sync dependencies
+        run: uv sync --locked
+      - name: Type check
+        run: uv run pyright
+      - name: Run tests
+        run: uv run pytest -v
+      - name: Check newsletter issues
+        run: |
+          for f in issues/*.md; do
+            echo "Checking $f"
+            uv run mailroom check "$f"
+          done
