@@ -1,11 +1,13 @@
 import argparse
 import asyncio
 from datetime import date
+import json
 import os
 from pathlib import Path
 import sys
 
 from mailroom.dates import first_monday_of_next_month
+from mailroom.guard import evaluate_hook_payload
 from mailroom.issues import check_issue
 from mailroom.models import Issue, SendPlan
 from mailroom.sender import SendError, build_send_plan, send_plan
@@ -129,6 +131,16 @@ def main(argv: list[str] | None = None) -> int:
         type=date.fromisoformat,
         default=None,
         help="Reference date (YYYY-MM-DD); defaults to today",
+    )
+
+    guard_parser = subparsers.add_parser(
+        "guard", help="Validate Claude Code hook JSON from stdin"
+    )
+    guard_parser.add_argument(
+        "--subscribers",
+        type=Path,
+        default=None,
+        help="Optional path to subscribers CSV",
     )
 
     args = parser.parse_args(argv)
@@ -279,6 +291,23 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Next send: {first_monday_of_next_month(effective_run_date).isoformat()}")
         print(f"{issue_label}: {status}")
         return 1 if problems else 0
+
+    if args.command == "guard":
+        raw_stdin = sys.stdin.read().strip()
+        if not raw_stdin:
+            return 0
+        try:
+            payload: object = json.loads(raw_stdin)
+        except json.JSONDecodeError as exc:
+            print(f"Invalid hook JSON: {exc}", file=sys.stderr)
+            return 2
+        decision = evaluate_hook_payload(
+            payload,
+            my_email=os.environ.get("MY_EMAIL"),
+        )
+        if decision.message:
+            print(decision.message, file=sys.stderr)
+        return decision.exit_code
 
     return 1
 
