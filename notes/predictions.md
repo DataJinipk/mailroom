@@ -12,3 +12,12 @@
   - Total subscribers: `24`
   - By group: `tea-curious: 8`, `gift-buyers: 8`, `daily-drinkers: 8`
   - By consent: `waitlist form: 24`
+
+## Step 2 — Dates (`--since-days`, `--since`, `first_monday_of_next_month`)
+- **Prediction (written before code):**
+  - With `--run-date 2026-11-20` and `--since-days 30` (cutoff `2026-10-21` inclusive): `7` subscribers (`Amara` on `2026-10-21` is included; `Hiroshi` on `2026-10-20` is excluded).
+  - With `--since 2026-10-01`: `12` subscribers.
+  - `first_monday_of_next_month`:
+    - `2026-11-20` -> `2026-12-07`
+    - `2026-12-07` -> `2027-01-04`
+    - `2026-12-31` -> `2027-01-04`

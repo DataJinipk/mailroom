@@ -1,7 +1,8 @@
+from datetime import date
 from pathlib import Path
 import tempfile
 
-from mailroom import count_subscribers
+from mailroom import count_subscribers, first_monday_of_next_month
 
 
 def test_counts_default_subscribers():
@@ -42,7 +43,34 @@ def test_counts_external_six_row_copy():
         assert result["consents"] == {"waitlist form": 5, "import": 1}
 
 
+def test_since_days_30_edge_date():
+    result = count_subscribers(
+        Path("data/subscribers.csv"),
+        since_days=30,
+        run_date=date(2026, 11, 20),
+    )
+    assert result["total"] == 7, f"expected 7, got {result['total']}"
+
+
+def test_since_exact_date():
+    result = count_subscribers(
+        Path("data/subscribers.csv"),
+        since=date(2026, 10, 1),
+        run_date=date(2026, 11, 20),
+    )
+    assert result["total"] == 12, f"expected 12, got {result['total']}"
+
+
+def test_first_monday_of_next_month():
+    assert first_monday_of_next_month(date(2026, 11, 20)) == date(2026, 12, 7)
+    assert first_monday_of_next_month(date(2026, 12, 7)) == date(2027, 1, 4)
+    assert first_monday_of_next_month(date(2026, 12, 31)) == date(2027, 1, 4)
+
+
 if __name__ == "__main__":
     test_counts_default_subscribers()
     test_counts_external_six_row_copy()
-    print("All Step 1 checks passed.")
+    test_since_days_30_edge_date()
+    test_since_exact_date()
+    test_first_monday_of_next_month()
+    print("All Step 2 checks passed.")
