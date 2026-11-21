@@ -21,3 +21,7 @@
     - `2026-11-20` -> `2026-12-07`
     - `2026-12-07` -> `2027-01-04`
     - `2026-12-31` -> `2027-01-04`
+
+## Step 3 — Reading an Error (`2026-02-30`)
+- **Prediction (written before running):**
+  - Changing Jonas Berg's `joined_on` to `2026-02-30` will raise `ValueError: day is out of range for month` in `date.fromisoformat(joined_raw)` inside `count_subscribers` (`mailroom.py`).
