@@ -74,3 +74,10 @@
   - PR #2 (`feat/pr-template-and-ci`): adds `.github/pull_request_template.md`, `.github/workflows/ci.yml`, `REVIEW.md`, `.github/CODEOWNERS`, and runs green on GitHub Actions (`pytest`, `pyright`, `mailroom check`).
   - PR #3 & #4 (`feat/issue-02-bad-link` -> `revert` + `test(issue): block http links`): demonstrates merging a bad `http://` link in `issues/issue-02.md`, reverting it via a revert PR, and adding a dedicated test blocking `http://` links.
   - Releases `v1.0` and `v1.0.1` created on GitHub.
+
+## Steps 25–26 — `mailroom guard`, Release `v1.1`, and Email Studio Integration
+- **Prediction (written before code):**
+  - `mailroom guard` exits `2` with a message naming `sara.ali@gmail.com` when `mcp__resend__send-email` targets `sara.ali@gmail.com`.
+  - `mailroom guard` exits `0` when `mcp__resend__send-email` targets `delivered@resend.dev`.
+  - `mailroom guard` exits `2` when `Write`/`Edit` targets `campaigns/steep-club-launch/emails/01-club-is-open.md` with a 56-character `Subject:` line.
+  - Release `v1.1` is created on GitHub and wired into `EmailStudioLab` hooks.

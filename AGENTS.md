@@ -3,7 +3,7 @@
 Mailroom is a Python CLI tool for Kettlebird Tea's *The Steep Club* newsletter, built test-first across Steps 0–26 (Chapters 13–15 of *The AI Agent Factory*).
 
 ## How I learn
-- **Current lesson:** Step 24 (`15.10 After the merge`).
+- **Current lesson:** Step 26 (`Your Email Studio` — complete).
 - Only use Python concepts and tooling introduced up to the current step.
 
 ## Core Rules
@@ -31,3 +31,4 @@ Mailroom is a Python CLI tool for Kettlebird Tea's *The Steep Club* newsletter, 
 - **CI gate:** The checks must pass before a merge.
 - **Reviewer guide:** Reviewers read `REVIEW.md`.
 - **Revert & regression:** Undo a bad merge with a revert pull request, then add the test that would have caught it.
+- **Studio integration:** Fixed rules are checked by Mailroom. Claude handles the judgment.
