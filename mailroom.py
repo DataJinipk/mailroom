@@ -3,6 +3,9 @@ from collections import Counter
 import csv
 from datetime import date, timedelta
 from pathlib import Path
+import re
+
+LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
 
 def first_monday_of_next_month(run_date: date) -> date:
@@ -59,6 +62,69 @@ def count_subscribers(
     }
 
 
+def check_subject(text: str) -> list[str]:
+    """Validate line 1 Subject: rule (present, non-empty, <= 50 chars via len())."""
+    lines = text.splitlines()
+    if not lines or not lines[0].startswith("Subject:"):
+        return ["Line 1: missing 'Subject: ...' line."]
+    subject = lines[0][len("Subject:") :].strip()
+    if not subject:
+        return ["Line 1: Subject is empty."]
+    if len(subject) > 50:
+        return [f"Line 1: Subject is {len(subject)} characters (limit is 50)."]
+    return []
+
+
+def check_issue(text: str) -> list[str]:
+    """Validate an issue markdown file against docs/email-rules.md."""
+    problems = check_subject(text)
+    lines = text.splitlines()
+
+    if len(lines) < 2 or not lines[1].startswith("Preview:"):
+        problems.append("Line 2: missing 'Preview: ...' line.")
+    else:
+        preview = lines[1][len("Preview:") :].strip()
+        if not preview:
+            problems.append("Line 2: Preview is empty.")
+        elif len(preview) > 90:
+            problems.append(
+                f"Line 2: Preview is {len(preview)} characters (limit is 90)."
+            )
+
+    if "{{first_name}}" not in text:
+        problems.append("Missing '{{first_name}}' greeting.")
+
+    links = LINK_PATTERN.findall(text)
+    if len(links) != 1:
+        problems.append(f"Expected exactly 1 main link, found {len(links)}.")
+    elif not links[0][1].startswith("https://"):
+        problems.append(f"Main link must use https:// (found {links[0][1]}).")
+
+    in_code_block = False
+    has_getting_line = False
+    has_unsub_line = False
+    for line in lines:
+        if line.strip().startswith("```"):
+            in_code_block = not in_code_block
+            continue
+        if not in_code_block:
+            if line.startswith("You're getting this because"):
+                has_getting_line = True
+            if "Unsubscribe: {{unsubscribe_url}}" in line:
+                has_unsub_line = True
+
+    if not has_getting_line:
+        problems.append(
+            "Missing plain-text footer line starting with \"You're getting this because\"."
+        )
+    if not has_unsub_line:
+        problems.append(
+            "Missing plain-text footer line containing 'Unsubscribe: {{unsubscribe_url}}'."
+        )
+
+    return problems
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Mailroom newsletter CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -97,15 +163,20 @@ def main() -> int:
         help="Reference date (YYYY-MM-DD); defaults to today",
     )
 
+    check_parser = subparsers.add_parser("check", help="Check a newsletter issue")
+    check_parser.add_argument("issue_path", type=Path, help="Path to issue markdown")
+
     args = parser.parse_args()
-    effective_run_date = args.run_date if args.run_date is not None else date.today()
 
     if args.command == "subscribers":
+        effective_run_date = args.run_date if args.run_date is not None else date.today()
         summary = count_subscribers(
             args.file,
             since=args.since,
             since_days=args.since_days,
-            run_date=effective_run_date if (args.since_days is not None or args.run_date is not None) else None,
+            run_date=effective_run_date
+            if (args.since_days is not None or args.run_date is not None)
+            else None,
         )
         print(f"Total subscribers: {summary['total']}")
         print("By group:")
@@ -114,11 +185,24 @@ def main() -> int:
         print("By consent:")
         for name, count in summary["consents"].items():
             print(f"  {name}: {count}")
-        print(f"Next send date: {first_monday_of_next_month(effective_run_date).isoformat()}")
+        print(
+            f"Next send date: {first_monday_of_next_month(effective_run_date).isoformat()}"
+        )
         return 0
 
     if args.command == "next-send":
+        effective_run_date = args.run_date if args.run_date is not None else date.today()
         print(first_monday_of_next_month(effective_run_date).isoformat())
+        return 0
+
+    if args.command == "check":
+        text = args.issue_path.read_text(encoding="utf-8")
+        problems = check_issue(text)
+        if problems:
+            for problem in problems:
+                print(problem)
+            return 1
+        print("OK")
         return 0
 
     return 1

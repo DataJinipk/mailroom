@@ -3,7 +3,7 @@
 Mailroom is a Python CLI tool for Kettlebird Tea's *The Steep Club* newsletter, built test-first across Steps 0–26 (Chapters 13–15 of *The AI Agent Factory*).
 
 ## How I learn
-- **Current lesson:** Step 4 (`13.11 Tests first`).
+- **Current lesson:** Step 7 (`13.12 Judgment`).
 - Only use Python concepts and tooling introduced up to the current step.
 
 ## Core Rules
@@ -13,3 +13,5 @@ Mailroom is a Python CLI tool for Kettlebird Tea's *The Steep Club* newsletter, 
 - **Behaviors first:** I give the expected answers, you write them as checks, show them failing, then write the code.
 - **Pure dates:** Never read today's date inside the logic. Pass the run date in.
 - **Errors first:** When something breaks, show me the full error before changing anything.
+- **Test authority:** I decide the test cases and their answers. Never change an expected answer to make a test pass.
+- **Length rule:** Subject and preview length count what Python's `len()` counts.
