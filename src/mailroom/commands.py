@@ -109,6 +109,28 @@ def main(argv: list[str] | None = None) -> int:
         help="Maximum concurrent sends",
     )
 
+    report_parser = subparsers.add_parser(
+        "report", help="Print a summary of subscribers, next send date, and issue status"
+    )
+    report_parser.add_argument(
+        "--file",
+        type=Path,
+        default=Path("data/subscribers.csv"),
+        help="Path to subscribers CSV",
+    )
+    report_parser.add_argument(
+        "--issue",
+        type=Path,
+        default=Path("issues/issue-01.md"),
+        help="Path to issue markdown",
+    )
+    report_parser.add_argument(
+        "--run-date",
+        type=date.fromisoformat,
+        default=None,
+        help="Reference date (YYYY-MM-DD); defaults to today",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "subscribers":
@@ -239,6 +261,24 @@ def main(argv: list[str] | None = None) -> int:
 
         print(f"Sent {len(receipts)} emails.")
         return 0
+
+    if args.command == "report":
+        effective_run_date = (
+            args.run_date if args.run_date is not None else date.today()
+        )
+        try:
+            summary = count_subscribers(args.file)
+            issue = Issue.from_file(args.issue)
+        except FileNotFoundError as exc:
+            print(f"File not found: {exc.filename}.", file=sys.stderr)
+            return 2
+        problems = check_issue(issue)
+        issue_label = args.issue.as_posix()
+        status = "OK" if not problems else f"{len(problems)} problem(s)"
+        print(f"Subscribers: {summary['total']}")
+        print(f"Next send: {first_monday_of_next_month(effective_run_date).isoformat()}")
+        print(f"{issue_label}: {status}")
+        return 1 if problems else 0
 
     return 1
 

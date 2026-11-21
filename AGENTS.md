@@ -3,7 +3,7 @@
 Mailroom is a Python CLI tool for Kettlebird Tea's *The Steep Club* newsletter, built test-first across Steps 0–26 (Chapters 13–15 of *The AI Agent Factory*).
 
 ## How I learn
-- **Current lesson:** Step 18 (`14.9 Reading SDK-shaped code`).
+- **Current lesson:** Step 24 (`15.10 After the merge`).
 - Only use Python concepts and tooling introduced up to the current step.
 
 ## Core Rules
@@ -26,3 +26,8 @@ Mailroom is a Python CLI tool for Kettlebird Tea's *The Steep Club* newsletter, 
 - **HTTP status handling:** Handle each status on purpose. Never retry a 4xx.
 - **Concurrency:** Send with a limit on how many at once.
 - **Retries & client choice:** Retry only what can succeed later, and every send has an idempotency key. Using `httpx.AsyncClient` directly for explicit concurrency, status handling, and idempotency headers.
+- **Branch & PR workflow:** Every change goes on a branch and arrives as a pull request.
+- **PR evidence:** A pull request shows its evidence (`pytest`, `pyright`, `mailroom check`).
+- **CI gate:** The checks must pass before a merge.
+- **Reviewer guide:** Reviewers read `REVIEW.md`.
+- **Revert & regression:** Undo a bad merge with a revert pull request, then add the test that would have caught it.

@@ -67,3 +67,10 @@
   - Non-localhost `RESEND_API_URL` (e.g. `https://api.resend.com`) or non-practice recipient (e.g. `@gmail.com`) is rejected before any HTTP request is made.
   - HTTP `4xx` (`401`, `404`, `422`) fails immediately with 1 attempt (never retried); HTTP `5xx` retries up to `max_retries` with the exact same `Idempotency-Key` header.
   - Async sending with `--at-once 5` caps in-flight requests at 5, preserves subscriber order, and sends all 24 emails.
+
+## Steps 19–24 — PRs, Evidence, CI Checks, REVIEW.md, CODEOWNERS, Revert PR & Releases
+- **Prediction (written before code):**
+  - PR #1 (`feat/report-command`): adds `mailroom report` summarizing 24 subscribers, next send date, and `issues/issue-01.md: OK`.
+  - PR #2 (`feat/pr-template-and-ci`): adds `.github/pull_request_template.md`, `.github/workflows/ci.yml`, `REVIEW.md`, `.github/CODEOWNERS`, and runs green on GitHub Actions (`pytest`, `pyright`, `mailroom check`).
+  - PR #3 & #4 (`feat/issue-02-bad-link` -> `revert` + `test(issue): block http links`): demonstrates merging a bad `http://` link in `issues/issue-02.md`, reverting it via a revert PR, and adding a dedicated test blocking `http://` links.
+  - Releases `v1.0` and `v1.0.1` created on GitHub.
